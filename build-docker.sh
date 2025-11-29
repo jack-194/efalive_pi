@@ -82,16 +82,7 @@ fi
 # Modify original build-options to allow config file to be mounted in the docker container
 BUILD_OPTS="$(echo "${BUILD_OPTS:-}" | sed -E 's@\-c\s?([^ ]+)@-c /config@')"
 
-# Check the arch of the machine we're running on. If it's 64-bit, use a 32-bit base image instead
-case "$(uname -m)" in
-  x86_64|aarch64)
-    BASE_IMAGE=i386/debian:bullseye
-    ;;
-  *)
-    BASE_IMAGE=debian:bullseye
-    ;;
-esac
-${DOCKER} build --build-arg BASE_IMAGE=${BASE_IMAGE} -t pi-gen "${DIR}"
+${DOCKER} build --build-arg BASE_IMAGE=debian:bookworm -t pi-gen "${DIR}"
 
 if [ "${CONTAINER_EXISTS}" != "" ]; then
   DOCKER_CMDLINE_NAME="${CONTAINER_NAME}_cont"
@@ -114,10 +105,10 @@ case $(uname -m) in
     ;;
 esac
 
-# Check if qemu-arm-static and /proc/sys/fs/binfmt_misc are present
+# Check if qemu-aarch64-static and /proc/sys/fs/binfmt_misc are present
 if [[ "${binfmt_misc_required}" == "1" ]]; then
-  if ! qemu_arm=$(which qemu-arm-static) ; then
-    echo "qemu-arm-static not found (please install qemu-user-static)"
+  if ! qemu_arm=$(which qemu-aarch64-static) ; then
+    echo "qemu-aarch64-static not found (please install qemu-user-static)"
     exit 1
   fi
   if [ ! -f /proc/sys/fs/binfmt_misc/register ]; then
@@ -128,13 +119,13 @@ if [[ "${binfmt_misc_required}" == "1" ]]; then
     fi
     echo "binfmt_misc mounted"
   fi
-  if ! grep -q "^interpreter ${qemu_arm}" /proc/sys/fs/binfmt_misc/qemu-arm* ; then
-    # Register qemu-arm for binfmt_misc
-    reg="echo ':qemu-arm-rpi:M::"\
-"\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:"\
+  if ! grep -q "^interpreter ${qemu_arm}" /proc/sys/fs/binfmt_misc/qemu-aarch64* ; then
+    # Register qemu-aarch64 for binfmt_misc
+    reg="echo ':qemu-aarch64-rpi:M::"\
+"\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:"\
 "\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:"\
 "${qemu_arm}:F' > /proc/sys/fs/binfmt_misc/register"
-    echo "Registering qemu-arm for binfmt_misc..."
+    echo "Registering qemu-aarch64 for binfmt_misc..."
     sudo bash -c "${reg}" 2>/dev/null || true
   fi
 fi
@@ -144,9 +135,6 @@ time ${DOCKER} run \
   $DOCKER_CMDLINE_PRE \
   --name "${DOCKER_CMDLINE_NAME}" \
   --privileged \
-  --cap-add=ALL \
-  -v /dev:/dev \
-  -v /lib/modules:/lib/modules \
   ${PIGEN_DOCKER_OPTS} \
   --volume "${CONFIG_FILE}":/config:ro \
   -e "GIT_HASH=${GIT_HASH}" \
@@ -154,7 +142,7 @@ time ${DOCKER} run \
   pi-gen \
   bash -e -o pipefail -c "
     dpkg-reconfigure qemu-user-static &&
-    # binfmt_misc is sometimes not mounted with debian bullseye image
+    # binfmt_misc is sometimes not mounted with debian bookworm image
     (mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc || true) &&
     cd /pi-gen; ./build.sh ${BUILD_OPTS} &&
     rsync -av work/*/build.log deploy/

@@ -1,10 +1,22 @@
+# efaLive PI fork
+
+This project forks the efaLive PI project to update the build scripts for the latest bookworm-arm64 branch of pi-gen.
+
 # efaLive PI project
 
-This project contains a build script to create a SD card image with efaLive for the RaspberryPi. It is based on the [project that is used to build the official Raspberry Pi OS images](https://github.com/RPi-Distro/Pi-gen). (Previously known as Raspbian).
+This project contains a build script to create a SD card image with efaLive for the RaspberryPi. It is based on [pi-gen](https://github.com/RPi-Distro/Pi-gen) that is used to build the official Raspberry Pi OS images. (Previously known as Raspbian).
 
 ## Binaries and documentation
+Tool used to create Raspberry Pi OS images, and custom images based on Raspberry Pi OS,
+which was in turn derived from the Raspbian project.
 
-For more information about efaLive, have a look to the efaLive documentation on [my homepage](https://www.hannay.de/en/efalive/).
+**Note**: Raspberry Pi OS 32 bit images are based primarily on Raspbian, while
+Raspberry Pi OS 64 bit images are based primarily on Debian.
+
+**Note**: 32 bit images should be built from the `master` branch.
+64 bit images should be built from the `arm64` branch.
+
+For more information about efaLive, have a look to the efaLive documentation on [hannay.de](https://www.hannay.de/en/efalive/).
 
 ## Related projects
 * [Debian GNU/Linux project](http://www.debian.-org/)
@@ -20,8 +32,8 @@ You need a Debian system. It might work on other Debian based systems as well, b
 
 ```shell
 apt-get install coreutils quilt parted qemu-user-static debootstrap zerofree zip \
-dosfstools libarchive-tools libcap2-bin grep rsync xz-utils file git curl bc \
-qemu-utils kpartx gpg pigz
+dosfstools e2fsprogs libarchive-tools libcap2-bin grep rsync xz-utils file git curl bc \
+gpg pigz xxd arch-test bmap-tools
 ```
 
 ## How to build
